@@ -99,8 +99,21 @@ examples/            Public SDK usage examples
 
 - Node.js 22 or newer
 - npm
-- A DREO account using email and password login
+- A primary DREO account that owns the home and devices
+- A separate SDK or adapter account that supports email and password login
+- The primary account must share its DREO home with the SDK or adapter account
 - Access to at least one compatible DREO device
+
+### Required DREO account setup
+
+The current SDK and ioBroker adapter use a two-account setup:
+
+1. The primary DREO account owns the home and its devices.
+2. A separate SDK or adapter account is created with email and password login.
+3. The primary account shares its home with this secondary account in the DREO app.
+4. The SDK or ioBroker adapter is configured with the secondary account credentials.
+
+Creating and sharing this secondary account is currently required, not optional. Device discovery relies on the `FamilyTree` visible to the invited SDK or adapter account. Accounts that can only authenticate through Apple or Google login are not currently supported.
 
 ## Installation for development
 
@@ -172,7 +185,7 @@ Functionality may be affected by DREO server outages, API changes, WebSocket pro
 - Never commit `.env` files.
 - Never publish access tokens, refresh tokens, account IDs, device serial numbers, or WebSocket captures.
 - Treat diagnostic logs as private.
-- Use a dedicated test account where practical.
+- Use only the dedicated SDK or adapter account credentials; do not configure the primary owner account.
 - Review logs before sharing them publicly.
 
 ## Documentation

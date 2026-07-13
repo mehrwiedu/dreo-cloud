@@ -22,8 +22,12 @@ Requirements:
 
 -   Node.js 22 or newer
 -   npm
--   A DREO account using email and password login
+-   A primary DREO account that owns the home and devices
+-   A separate SDK or adapter account that supports email and password login
+-   A DREO home shared from the primary account with the SDK or adapter account
 -   At least one compatible DREO device for integration testing
+
+The SDK and adapter must be configured with the secondary SDK or adapter account, not the primary owner account. This shared-account setup is currently required because device discovery relies on the `FamilyTree` visible to the invited account.
 
 Install dependencies:
 

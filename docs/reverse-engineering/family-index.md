@@ -1,48 +1,53 @@
 # Family Index
 
-Observed in official Dreo iOS app.
+Observed in the official DREO iOS app and verified against DREO Cloud communication.
 
 ## Endpoint
 
-/api/app/index/family/...
+`/api/app/index/family/...`
 
 ## Purpose
 
-Returns all homes/families visible to the current user.
+Returns all homes or families visible to the authenticated user.
 
 ## Response
 
-familyRooms[]
+`familyRooms[]`
 
 Each family contains:
 
--   familyId
--   familyName
--   owner
--   userId
--   avatarType
--   avatarValue
--   rooms[]
+-   `familyId`
+-   `familyName`
+-   `owner`
+-   `userId`
+-   `avatarType`
+-   `avatarValue`
+-   `rooms[]`
 
-Each room contains:
+Each room contains fields including:
 
--   id
--   roomName
-    ...
+-   `id`
+-   `roomName`
+-   devices assigned to the room
 
-## Multi-account and shared family behavior
+## Required shared-account setup
 
-The observed test account does not own any devices.
+The currently supported SDK and ioBroker adapter setup uses a dedicated secondary account:
 
-The account has access to a shared family/home owned by another Dreo account.
+1. The primary DREO account owns the home and devices.
+2. A separate SDK or adapter account is created with email and password login.
+3. The primary account shares its home with the secondary account.
+4. The SDK or adapter authenticates as the invited secondary account.
 
-The `/api/app/index/family/room/devices` endpoint still returns the shared family, its rooms and devices.
+The invited account does not need to own the devices. The `/api/app/index/family/room/devices` endpoint returns the shared family, its rooms and its devices to that account.
 
-Observed implications:
+Creating and sharing the secondary account is currently required because device discovery relies on the `FamilyTree` returned for the invited account.
 
--   A family can be visible even if `owner` is `false`.
--   Device access is not limited to owner accounts.
--   SDK consumers must not assume that the authenticated account owns the returned family.
+## Observed implications
+
+-   A family can be visible when `owner` is `false`.
+-   Device access is not limited to the owner account.
+-   The authenticated SDK or adapter account must have access to the shared family.
 -   Family IDs must be discovered dynamically through the API.
--   The ioBroker adapter should support owner accounts and invited member accounts.
--   The adapter should allow selecting one or multiple visible families instead of hardcoding a family ID.
+-   The implementation must not assume ownership of a returned family.
+-   No family ID may be hardcoded.
