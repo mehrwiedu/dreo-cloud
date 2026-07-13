@@ -105,8 +105,8 @@ examples/            Public SDK usage examples
 ## Installation for development
 
 ```bash
-git clone <repository-url>
-cd dreo-dev
+git clone https://github.com/mehrwiedu/dreo-cloud.git
+cd dreo-cloud
 npm install
 ```
 
@@ -202,11 +202,9 @@ Some reverse-engineering documentation may describe internal or experimental beh
 
 ## Planned work
 
-- Safer public SDK examples
 - Additional tested device models
 - Improved device-type-specific mappings
 - More automated tests
-- Public package metadata
 - Adapter icon and public adapter documentation
 - Installation instructions for end users
 - Review for ioBroker repository requirements
