@@ -1,0 +1,51 @@
+{
+    "common": {
+        "name": "dreo",
+        "version": "0.1.0",
+        "title": "DREO",
+        "titleLang": {
+            "en": "DREO",
+            "de": "DREO"
+        },
+        "desc": {
+            "en": "ioBroker adapter for DREO smart home devices.",
+            "de": "ioBroker-Adapter für DREO-Smart-Home-Geräte."
+        },
+        "authors": ["mehrwiedu"],
+        "keywords": ["dreo", "fan", "ceiling fan", "smart home", "iot"],
+        "license": "MIT",
+        "platform": "Javascript/Node.js",
+        "mode": "daemon",
+        "icon": "dreo.png",
+        "enabled": false,
+        "extIcon": "https://raw.githubusercontent.com/mehrwiedu/ioBroker.dreo/main/admin/dreo.png",
+        "readme": "https://github.com/mehrwiedu/ioBroker.dreo/blob/main/README.md",
+        "loglevel": "info",
+        "tier": 3,
+        "compact": true,
+        "connectionType": "cloud",
+        "dataSource": "push",
+        "adminUI": {
+            "config": "json"
+        },
+        "dependencies": [
+            {
+                "js-controller": ">=6.0.0"
+            }
+        ],
+        "globalDependencies": [
+            {
+                "admin": ">=7.0.0"
+            }
+        ]
+    },
+    "native": {
+        "email": "",
+        "password": "",
+        "region": "EU"
+    },
+    "encryptedNative": ["password"],
+    "protectedNative": ["password"],
+    "objects": [],
+    "instanceObjects": []
+}

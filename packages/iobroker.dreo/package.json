@@ -1,0 +1,21 @@
+{
+    "name": "iobroker.dreo",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "dist/main.js",
+    "types": "dist/main.d.ts",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "clean": "rm -rf dist",
+        "typecheck": "tsc -p tsconfig.json --noEmit"
+    },
+    "dependencies": {
+        "@dreo/api": "file:../dreo-api",
+        "@iobroker/adapter-core": "^3.2.3"
+    },
+    "devDependencies": {
+        "@types/node": "^26.0.1",
+        "typescript": "^5.9.2"
+    }
+}

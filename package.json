@@ -1,0 +1,39 @@
+{
+  "name": "dreo-dev",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Development environment for reverse engineering the Dreo ecosystem and building a reusable API and ioBroker adapter.",
+  "license": "MIT",
+  "author": "mehrwiedu",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck:sdk": "npm run typecheck -w @dreo/api",
+    "typecheck:adapter": "npm run typecheck -w iobroker.dreo",
+    "typecheck": "npm run typecheck:sdk && npm run build:sdk && npm run typecheck:adapter && npm run typecheck:examples",
+    "build:sdk": "npm run build -w @dreo/api",
+    "build:adapter": "npm run build -w iobroker.dreo",
+    "build": "npm run build:sdk && npm run build:adapter",
+    "check": "npm run typecheck && npm run build",
+    "typecheck:examples": "tsc -p examples/tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mehrwiedu/dreo-cloud.git"
+  },
+  "homepage": "https://github.com/mehrwiedu/dreo-cloud#readme",
+  "bugs": {
+    "url": "https://github.com/mehrwiedu/dreo-cloud/issues"
+  }
+}

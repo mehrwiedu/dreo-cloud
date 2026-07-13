@@ -1,0 +1,53 @@
+{
+    "i18n": false,
+    "type": "panel",
+    "items": {
+        "email": {
+            "type": "text",
+            "label": {
+                "en": "DREO email address",
+                "de": "DREO-E-Mail-Adresse"
+            },
+            "help": {
+                "en": "Email address used for the DREO account.",
+                "de": "E-Mail-Adresse des DREO-Kontos."
+            }
+        },
+        "password": {
+            "type": "password",
+            "label": {
+                "en": "DREO password",
+                "de": "DREO-Passwort"
+            },
+            "help": {
+                "en": "Password used for the DREO account.",
+                "de": "Passwort des DREO-Kontos."
+            }
+        },
+        "region": {
+            "type": "select",
+            "label": {
+                "en": "Region",
+                "de": "Region"
+            },
+            "help": {
+                "en": "DREO cloud region.",
+                "de": "DREO-Cloud-Region."
+            },
+            "options": [
+                {
+                    "label": "EU",
+                    "value": "EU"
+                },
+                {
+                    "label": "US",
+                    "value": "US"
+                },
+                {
+                    "label": "CN",
+                    "value": "CN"
+                }
+            ]
+        }
+    }
+}
