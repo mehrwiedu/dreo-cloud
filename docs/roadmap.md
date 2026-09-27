@@ -1,105 +1,75 @@
 # SDK Roadmap
 
-## Authentication
+## Completed foundation
 
--   [x] Email/password login
--   [ ] Apple login
--   [ ] Google login
--   [x] Token refresh
--   [ ] Token persistence
+- [x] Email/password login
+- [x] EU and US regions
+- [x] Session refresh after HTTP `401`
+- [x] Authenticated HTTP retry
+- [x] FamilyTree discovery
+- [x] Initial device-state loading
+- [x] WebSocket live updates
+- [x] WebSocket reconnect after session refresh
+- [x] Runtime device discovery
+- [x] Real-device hot-add while the integration remains running
+- [x] Resolved devices and capabilities
+- [x] Known, unknown and unassigned states
+- [x] State constraints and command validation
+- [x] Structured logger interface
+- [x] Typed public SDK entrypoint
+- [x] Safe connect/disconnect behavior
+- [x] Failed `control-reply` rejection
 
-## API
+## Confirmed controls
 
--   [x] Bootstrap endpoint documented
--   [x] Family / room / device tree endpoint discovered
--   [x] Family tree endpoint implemented
--   [x] Device state endpoint
--   [ ] Device setting endpoint
--   [ ] Device command endpoint
--   [x] WebSocket endpoint
+- [x] Power, fan and wind level
+- [x] Main light, brightness and color temperature
+- [x] Atmosphere light and brightness
+- [x] Display and indicator controls
+- [x] Mute
+- [x] Child lock
+- [x] Fan modes
+- [x] Sleep light
+- [x] Power-on and power-off timers
+- [x] Directional oscillation mode
+- [x] Horizontal and vertical angle presets
+- [x] Humidifier mode
+- [x] Humidifier fog level
+- [x] Humidifier auto and sleep target humidity
+- [x] Humidifier filter confirmation
+- [x] Humidifier warm mist
+- [x] Humidifier indicator levels
+- [x] Humidifier humidity thresholds
+- [x] Air-purifier modes and fan levels
+- [x] Air-purifier mood-light and display controls
+- [x] Air-purifier mute, child lock and power recovery
+- [x] Air-purifier PM2.5, air-quality level and filter-life information
 
-## Domain Models
+## Deliberately raw-only
 
--   [x] Family
--   [x] Room
--   [x] Device
--   [x] FamilyTree
--   [ ] DeviceResources
--   [ ] DeviceMetadata
--   [x] DeviceCapabilities
--   [x] DeviceState
+- [x] `predefine` remains read-only
+- [x] `fixedconf` remains read-only
+- [x] Unverified RGB effects remain read-only
 
-## SDK
+## Next validation work
 
--   [x] HttpClient
--   [x] AuthManager
--   [x] AppApi
--   [x] DreoClient
--   [x] FamilyTreeMapper
--   [x] Automatic client login
--   [x] Public SDK entrypoint
--   [x] Error model
--   [ ] Logging redaction
--   [x] Central logger interface
--   [x] Session observer mechanism
--   [x] WebSocket reconnect after session refresh
+- [ ] Friendly object creation when a known raw key first appears after initialization
+- [ ] Partially shared homes/devices using a third account
+- [ ] Additional models and device categories
+- [ ] Long-running reconnect and stability validation
 
-## ioBroker Adapter
+## Productization
 
--   [ ] Adapter package
--   [ ] Login configuration
--   [ ] Automatic family discovery
--   [ ] Room and device state tree
--   [ ] Device state synchronization
--   [ ] Commands
--   [ ] WebSocket live updates
--   [ ] Generate states only for supported device capabilities
+- [ ] Logging redaction review
+- [ ] Token persistence
+- [ ] Public SDK examples review
+- [ ] Adapter setup guide
+- [ ] Release/version decision
+- [ ] npm and ioBroker repository preparation
 
-## Documentation
+## Authentication research
 
--   [x] Login protocol
--   [x] Bootstrap endpoint
--   [x] Device profile
--   [x] Family / room / device discovery
--   [x] Development guide
--   [ ] SDK examples
--   [ ] Adapter setup guide
+- [ ] Apple login
+- [ ] Google login
 
-## Research
-
--   [x] WebSocket command protocol
--   [x] Device state mapping
--   [x] FamilyTree capability analysis
--   [ ] Device capability endpoint discovery
--   [ ] RGB preset protocol
--   [ ] RGB effect protocol
--   [x] WebSocket lifecycle behaviour
--   [x] Token refresh and WebSocket reconnect behaviour
-
-## Next SDK Focus
-
--   [x] Make ResolvedDevice easier to consume from DreoClient
--   [x] Expose adapter-friendly resolved capabilities
--   [x] Generate supported command/state metadata from resolved capabilities
--   [x] Prepare SDK output for ioBroker state generation
-
-## SDK v0 Adapter-Ready Status
-
--   [x] Email/password login
--   [x] Token refresh
--   [x] WebSocket reconnect after session refresh
--   [x] FamilyTree discovery
--   [x] Device state loading
--   [x] ResolvedDevice model
--   [x] Capability metadata
--   [x] State details
--   [x] Known, unknown and unassigned state separation
--   [x] State constraints
--   [x] Device-specific controlsConf constraint refinement
--   [x] Command validation against resolved constraints
--   [x] SDK package build configuration
--   [x] Adapter-friendly public exports
-
-The SDK is considered adapter-ready for the first ioBroker adapter implementation.
-
-Remaining SDK work can continue incrementally while the adapter is developed.
+The SDK is adapter-ready. New functionality should continue incrementally and only after isolated device validation.

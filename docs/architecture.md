@@ -1,384 +1,165 @@
 # Architecture
 
-The DREO SDK is designed as a reusable TypeScript library for communicating with DREO smart home devices.
+## Overview
 
-The architecture separates authentication, REST communication, WebSocket communication, device state management and command mapping into independent components. This keeps the SDK modular, easy to maintain and reusable for future integrations.
-
----
-
-# High Level Architecture
+The project uses an SDK-first architecture.
 
 ```text
-                   Application
-                        │
-                        ▼
-                  DreoClient
-                        │
-        ┌───────────────┼────────────────┐
-        │               │                │
-        ▼               ▼                ▼
-   DreoSession      REST API       WebSocket Client
-        │               │                ▲
-        ▼               ▼                │
-   AuthManager   AuthenticatedHttpClient │
-        │               │                │
-        └───────────────┴──── Session Observer
-                                        │
-                                        ▼
-                                   DreoDevice
-                                        │
-                 ┌──────────────────────┴──────────────────────┐
-                 ▼                                             ▼
-           StateMapper                                 DreoDeviceState
+DREO cloud
+    |
+    +-- HTTP: login, FamilyTree, initial state
+    |
+    +-- WebSocket: commands and live reports
+             |
+             v
+      @mehrwiedu/dreo-api
+             |
+             v
+      ioBroker.dreo-cloud
 ```
 
----
+The SDK is reusable outside ioBroker. The adapter is a thin integration layer.
 
-# Core Components
+## Discovery boundary
 
-## AuthManager
+FamilyTree is the only primary device-discovery source.
 
-Responsible for authenticating against the DREO cloud.
+The initial device-state endpoint does not discover additional devices. It enriches devices that were already found through FamilyTree with current values and available state keys.
 
-Responsibilities
+When a live message references an unknown serial number, the SDK reloads FamilyTree. The device is initialized only if FamilyTree contains it.
 
--   Login
--   Token handling
--   Token refresh
--   Region detection
+## Core components
 
----
+### `DreoSession`
 
-````md
-## DreoSession
+- owns the active authentication state
+- performs login and refresh
+- notifies observers after session changes
 
-`DreoSession` is the central authentication state holder.
+### `AuthenticatedHttpClient`
 
-Responsibilities
+- sends authenticated HTTP requests
+- triggers one session refresh after HTTP `401`
+- retries the request with refreshed credentials
 
--   Store the current access token
+### `DreoWebSocketClient`
 
--   Trigger login if no token exists
+- connects with the active session token
+- sends control commands
+- receives live reports
+- reconnects after session changes
+- protects against duplicate connections
+- rejects pending replies on disconnect or reconnect
+- rejects failed `control-reply` messages
 
--   Refresh the session after authentication failures
+### `DreoClient`
 
--   Notify registered observers after session changes
+- coordinates login, FamilyTree and initial-state loading
+- creates and registers `DreoDevice` instances
+- routes live reports
+- handles runtime discovery
 
--   Provide the current session data to HTTP and WebSocket components
+### `DreoDevice`
 
-The session is intentionally shared by REST communication and the WebSocket client.
+- stores device metadata and state
+- merges incremental reports
+- exposes high-level controls
+- applies model/state guards
+- validates native values before sending commands
 
-This allows the SDK to handle an expired or invalid access token consistently.
+### State and capability resolvers
 
-When the HTTP layer receives a 401 response, it calls `DreoSession.refresh()`.
+- combine FamilyTree metadata with the initial state of an already discovered device
+- preserve unknown values
+- resolve device-specific constraints
+- expose adapter-friendly metadata
 
-After a successful refresh, the session notifies its observers.
+## Responsibility split
 
-The WebSocket client uses this notification to reconnect with the new access token.
+### SDK
 
-## REST API
+The SDK owns:
 
-Provides access to the HTTP endpoints used by the official application.
+- DREO protocol models
+- native command payloads
+- device semantics
+- command dependencies
+- model-specific guards
+- constraints and validation
+- protocol error handling
 
-Responsibilities
+### Adapter
 
--   Device discovery
--   User information
--   Device metadata
+The adapter owns:
 
----
+- ioBroker configuration
+- object and state creation
+- friendly names and roles
+- write routing to public SDK methods
+- `ack` handling and write reconciliation
+- read-only raw-state presentation
 
-## DreoWebSocketClient
+The adapter must not construct DREO-native payloads such as `cruiseconf`.
 
-Maintains the persistent WebSocket connection to the DREO cloud.
-
-Responsibilities
-
--   Connect to the cloud
--   Send control commands
--   Receive reports
--   Dispatch incoming messages
--   Support single-parameter commands
--   Support multi-parameter commands
--   Reconnect automatically after a refreshed session
--   Avoid duplicate connections
--   Handle disconnect during connection setup
--   Support report handler unsubscribe
-
-Supported message types
-
--   report
--   control-report
--   control-reply
-
----
-
-## DreoClient
-
-Main entry point of the SDK.
-
-Responsibilities
-
--   Authenticate
--   Discover devices
--   Create DreoDevice instances
--   Manage WebSocket connection
--   Route incoming reports
-
-Typical usage
-
-```ts
-const client = new DreoClient(config);
-
-await client.login();
-
-await client.loadDevices();
-
-const device = client.getDeviceByName("Living Room");
-```
-````
-
----
-
-## DreoLogger
-
-The SDK uses a central optional logger interface called `DreoLogger`.
-
-The logger can be passed through `DreoClient.login()`:
-
-````ts
-const client = await DreoClient.login({
-    email,
-    password,
-    region: "EU",
-    logger,
-});
-
-The logger is forwarded to:
-
-* AuthManager
-* AuthenticatedHttpClient
-* DreoWebSocketClient
-
-If no logger is provided, the SDK remains silent.
-
-The production SDK code does not write directly to console.*.
-Console output is limited to development and research tools under tools/.
-
-## DreoDevice
-
-Represents one physical DREO device.
-
-Responsibilities
-
--   Store device metadata
--   Maintain local device state
--   Apply incoming reports
--   Expose high-level control methods
-
-Example
-
-```ts
-await device.setFan(true);
-
-await device.setWindLevel(4);
-
-await device.setMainLight(true);
-
-await device.setBrightness(50);
-
-await device.setColorTemperature(60);
-
-await device.setAtmosphereLight(true);
-````
-
----
-
-## StateMapper
-
-The StateMapper converts high-level SDK operations into the parameter combinations expected by DREO devices.
-
-Example
-
-```ts
-device.setBrightness(50);
-```
-
-becomes
-
-```json
-{
-    "poweron": true,
-    "lighton": true,
-    "brightness": 50
-}
-```
-
-Another example
-
-```ts
-device.setWindLevel(4);
-```
-
-becomes
-
-```json
-{
-    "poweron": true,
-    "fanon": true,
-    "windlevel": 4
-}
-```
-
-The goal of the StateMapper is to hide DREO protocol quirks from SDK users.
-
----
-
-# Device State
-
-The DREO protocol sends incremental updates.
-
-Example
-
-```json
-{
-    "brightness": 50
-}
-```
-
-Only the modified value is transmitted.
-
-The SDK therefore maintains a local cached state for every device.
-
-Incoming reports are merged into the existing state.
-
-Example
-
-```ts
-device.applyReport(report.reported);
-```
-
-Unknown protocol fields are preserved inside
-
-```ts
-state.raw;
-```
-
-This allows newly discovered protocol values to remain available before official SDK support is implemented.
-
----
-
-# Command Flow
+## Command flow
 
 ```text
-Application
-      │
-      ▼
-DreoDevice
-      │
-      ▼
-StateMapper
-      │
-      ▼
-WebSocket Client
-      │
-      ▼
-DREO Cloud
-      │
-      ▼
-Physical Device
-      │
-      ▼
-WebSocket Report
-      │
-      ▼
-applyReport()
-      │
-      ▼
-Updated Device State
+ioBroker write
+    |
+    v
+Adapter normalization and routing
+    |
+    v
+DreoDevice public method
+    |
+    v
+SDK validation and payload construction
+    |
+    v
+DreoWebSocketClient
+    |
+    v
+DREO cloud/device
+    |
+    +-- successful control-reply
+    |       |
+    |       v
+    |   optional immediate reported values
+    |
+    +-- failed control-reply
+            |
+            v
+        DreoWebSocketError
 ```
 
----
+Authoritative live state continues to arrive through device reports. The adapter reconciles identical or rejected writes so states do not remain indefinitely at `ack=false`.
 
-# Design Principles
+## State model
 
-The SDK follows several important design principles.
+DREO reports are incremental. The SDK merges them into a cached `DreoDeviceState`.
 
--   Separate protocol handling from business logic.
--   Hide DREO protocol quirks behind high-level methods.
--   Keep a local synchronized device state.
--   Preserve unknown protocol values.
--   Prefer reusable SDK logic over adapter-specific implementations.
--   Keep the future ioBroker adapter as small as possible.
+Unknown keys remain available under `state.raw`. This allows observation before a friendly mapping is implemented.
 
----
+Raw values are not writable by the adapter.
 
-# Current Status
+## Device-specific semantics
 
-Implemented
+Identical raw keys are not assumed to mean the same thing on every model.
 
--   Authentication
--   Device discovery
--   WebSocket communication
--   Local state cache
--   Multi-parameter commands
--   StateMapper
--   Main light
--   Brightness
--   Color temperature
--   Fan
--   Wind level
--   Atmosphere light (RGB On/Off)
--   Session refresh after HTTP 401
--   WebSocket reconnect after session refresh
--   Central SDK logger
--   WebSocket lifecycle hardening
+Examples:
 
-Currently under investigation
+- `lighton` can be a main light or a display/status light.
+- `oscmode` has confirmed directional semantics only on `DR-HPF002S`.
+- `DR-HCF001S` has no `poweron`.
 
--   RGB presets
--   RGB scenes
--   Additional lighting effects
--   Timer
--   Sleep mode
--   Oscillation
--   Additional device models
+Model guards are used only where this semantic difference is confirmed.
 
----
+## Design principles
 
-# Future Architecture
-
-The long-term goal is that integrations such as the ioBroker adapter communicate exclusively with the SDK.
-
-Example
-
-```ts
-await device.setFan(true);
-
-await device.setWindLevel(4);
-
-await device.setBrightness(50);
-
-await device.setAtmosphereLight(false);
-```
-
-The adapter itself should only be responsible for
-
--   creating ioBroker states
--   reacting to state changes
--   synchronizing SDK state with ioBroker
-
-All protocol knowledge should remain inside the SDK.
-
-## Error Model
-
-The SDK uses a dedicated error hierarchy instead of generic JavaScript errors.
-
-```
-DreoError
-├── DreoValidationError
-├── DreoAuthenticationError
-└── DreoWebSocketError
-```
-
-This allows SDK consumers to distinguish between validation, authentication and communication failures using standard `instanceof` checks.
+- SDK first
+- FamilyTree-only primary discovery
+- thin adapter
+- preserve unknown data
+- no speculative commands
+- real-device validation before writable exposure
+- small, testable changes

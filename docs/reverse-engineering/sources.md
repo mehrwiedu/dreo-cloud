@@ -1,12 +1,13 @@
-# DREO reverse engineering sources
+# Dreo reverse engineering sources
 
-## Sources
+## Known sources
 
-- DREO account portal
-- DREO mobile app
-- Direct observations of DREO Cloud communication
-- Controlled network captures where required
+- Official Home Assistant integration: dreo-team/hass-dreoverse
+- Community Home Assistant integration: JeffSteinbok/hass-dreo
+- Dreo account portal
+- Dreo mobile app
+- Own network captures, if required later
 
 ## Notes
 
-The goal is to understand the DREO login flow, FamilyTree discovery, authentication headers, token handling, WebSocket communication and command structure before implementing SDK-specific logic.
+The goal is to understand the Dreo login flow, device list API, authentication headers, token handling and command structure before implementing SDK-specific logic.

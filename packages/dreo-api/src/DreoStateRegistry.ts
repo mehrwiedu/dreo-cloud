@@ -134,6 +134,38 @@ export const DREO_STATE_REGISTRY: Record<string, DreoStateDefinition> = {
         },
     },
 
+    rgblevel: {
+        known: true,
+        writable: true,
+        category: "control",
+        description: "Mood-light indicator level",
+        constraint: {
+            type: "number",
+            allowedValues: [0, 2],
+        },
+    },
+
+    ledlevel: {
+        known: true,
+        writable: true,
+        category: "control",
+        description: "Internal display level",
+        constraint: {
+            type: "number",
+            allowedValues: [0, 2],
+        },
+    },
+
+    hotfogon: {
+        known: true,
+        writable: true,
+        category: "control",
+        description: "Warm-mist heater",
+        constraint: {
+            type: "boolean",
+        },
+    },
+
     // --------------------------------------------------
     // Configuration
     // --------------------------------------------------
@@ -142,7 +174,7 @@ export const DREO_STATE_REGISTRY: Record<string, DreoStateDefinition> = {
         known: true,
         writable: true,
         category: "configuration",
-        description: "Button sound",
+        description: "Mute control-panel sounds",
         constraint: {
             type: "boolean",
         },
@@ -243,14 +275,14 @@ export const DREO_STATE_REGISTRY: Record<string, DreoStateDefinition> = {
     },
 
     // --------------------------------------------------
-    // Informational (bekannt, aber Bedeutung noch nicht vollständig geklärt)
+    // Native power timers
     // --------------------------------------------------
 
     timeron: {
         known: true,
-        writable: false,
+        writable: true,
         category: "information",
-        description: "Timer configuration",
+        description: "Power-on timer configuration",
         constraint: {
             type: "object",
         },
@@ -258,9 +290,9 @@ export const DREO_STATE_REGISTRY: Record<string, DreoStateDefinition> = {
 
     timeroff: {
         known: true,
-        writable: false,
+        writable: true,
         category: "information",
-        description: "Timer configuration",
+        description: "Power-off timer configuration",
         constraint: {
             type: "object",
         },
@@ -318,9 +350,9 @@ export const DREO_STATE_REGISTRY: Record<string, DreoStateDefinition> = {
 
     scenes: {
         known: true,
-        writable: false,
+        writable: true,
         category: "information",
-        description: "Scene configuration",
+        description: "Sleep-light scene configuration",
         constraint: {
             type: "string",
         },

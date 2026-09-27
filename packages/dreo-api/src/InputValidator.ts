@@ -22,6 +22,21 @@ export class InputValidator {
         this.requireRange(value, 0, 4, "rgbPreset");
     }
 
+    public static requireIntegerRange(
+        value: number,
+        min: number,
+        max: number,
+        name = "value"
+    ): void {
+        this.requireRange(value, min, max, name);
+
+        if (!Number.isInteger(value)) {
+            throw new DreoValidationError(
+                `${name} must be an integer.`
+            );
+        }
+    }
+
     public static requireRange(
         value: number,
         min: number,

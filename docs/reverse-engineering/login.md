@@ -2,6 +2,10 @@
 
 **Status:** ✅ Verified against the official Dreo Cloud API
 
+## Source
+
+Initial protocol analysis based on the Home Assistant community integration.
+
 ## Base URL
 
 ```
@@ -81,7 +85,7 @@ If the returned region differs from the configured region, the client repeats th
 
 ## Notes
 
-Current observations have been verified against the implemented DREO Cloud communication flow.
+Current observations are based on the Home Assistant reference implementation and still need to be verified against the official mobile application.
 
 ## Verification
 

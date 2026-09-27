@@ -14,7 +14,7 @@ We will build the project as a monorepo with a reusable Dreo SDK as the core pac
 
 The `dreo-api` package contains all Dreo-related communication, authentication, device models, commands and protocol handling.
 
-The `iobroker.dreo` package will later use `dreo-api` instead of implementing Dreo logic directly.
+The separate `ioBroker.dreo-cloud` adapter uses the published `@mehrwiedu/dreo-api` package instead of implementing DREO protocol logic directly.
 
 ## Consequences
 

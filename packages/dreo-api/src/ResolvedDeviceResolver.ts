@@ -79,9 +79,170 @@ export class ResolvedDeviceResolver {
 
             return {
                 ...state,
-                constraint,
+                constraint: this.mergeResolvedConstraint(
+                    state.constraint,
+                    constraint
+                ),
             };
         });
+    }
+
+    /**
+     * Combines the general registry constraint with device-specific metadata.
+     *
+     * The registry remains authoritative when the device configuration
+     * reports a conflicting type. Device-specific details may refine a
+     * constraint only when both sources agree on the type.
+     */
+    private mergeResolvedConstraint(
+        registryConstraint: StateConstraint | undefined,
+        resolvedConstraint: StateConstraint
+    ): StateConstraint {
+        if (!registryConstraint) {
+            return resolvedConstraint;
+        }
+
+        if (registryConstraint.type !== resolvedConstraint.type) {
+            return registryConstraint;
+        }
+
+        switch (registryConstraint.type) {
+            case "number": {
+                if (resolvedConstraint.type !== "number") {
+                    return registryConstraint;
+                }
+
+                const minimum = this.mergeMinimum(
+                    registryConstraint.min,
+                    resolvedConstraint.min
+                );
+                const maximum = this.mergeMaximum(
+                    registryConstraint.max,
+                    resolvedConstraint.max
+                );
+
+                return {
+                    type: "number",
+                    min: minimum,
+                    max: maximum,
+                    step:
+                        resolvedConstraint.step ??
+                        registryConstraint.step,
+                    allowedValues: this.mergeNumberAllowedValues(
+                        registryConstraint.allowedValues,
+                        resolvedConstraint.allowedValues,
+                        minimum,
+                        maximum
+                    ),
+                };
+            }
+
+            case "string":
+                if (resolvedConstraint.type !== "string") {
+                    return registryConstraint;
+                }
+
+                return {
+                    type: "string",
+                    allowedValues: this.mergeAllowedValues(
+                        registryConstraint.allowedValues,
+                        resolvedConstraint.allowedValues
+                    ),
+                };
+
+            case "boolean":
+            case "object":
+            case "unknown":
+            default:
+                return resolvedConstraint;
+        }
+    }
+
+    private mergeMinimum(
+        registryValue: number | undefined,
+        resolvedValue: number | undefined
+    ): number | undefined {
+        if (registryValue === undefined) {
+            return resolvedValue;
+        }
+
+        if (resolvedValue === undefined) {
+            return registryValue;
+        }
+
+        return Math.max(registryValue, resolvedValue);
+    }
+
+    private mergeMaximum(
+        registryValue: number | undefined,
+        resolvedValue: number | undefined
+    ): number | undefined {
+        if (registryValue === undefined) {
+            return resolvedValue;
+        }
+
+        if (resolvedValue === undefined) {
+            return registryValue;
+        }
+
+        return Math.min(registryValue, resolvedValue);
+    }
+
+    private mergeNumberAllowedValues(
+        registryValues: number[] | undefined,
+        resolvedValues: number[] | undefined,
+        minimum: number | undefined,
+        maximum: number | undefined
+    ): number[] | undefined {
+        const mergedValues = this.mergeAllowedValues(
+            registryValues,
+            resolvedValues
+        );
+
+        if (!mergedValues?.length) {
+            return undefined;
+        }
+
+        const filteredValues = mergedValues.filter(
+            (value) =>
+                (minimum === undefined || value >= minimum) &&
+                (maximum === undefined || value <= maximum)
+        );
+
+        if (filteredValues.length === 0) {
+            return undefined;
+        }
+
+        return [...new Set(filteredValues)].sort(
+            (left, right) => left - right
+        );
+    }
+
+    private mergeAllowedValues<T extends string | number>(
+        registryValues: T[] | undefined,
+        resolvedValues: T[] | undefined
+    ): T[] | undefined {
+        if (!registryValues?.length) {
+            return resolvedValues;
+        }
+
+        if (!resolvedValues?.length) {
+            return registryValues;
+        }
+
+        const resolvedValueSet = new Set<T>(resolvedValues);
+        const intersection = registryValues.filter((value) =>
+            resolvedValueSet.has(value)
+        );
+
+        /*
+         * An empty intersection indicates conflicting metadata. In that case,
+         * preserve the confirmed registry values instead of accidentally
+         * removing validation altogether.
+         */
+        return intersection.length > 0
+            ? intersection
+            : registryValues;
     }
 
     private withStateDetails(

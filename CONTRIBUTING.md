@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for considering a contribution to the DREO TypeScript SDK and ioBroker adapter.
+Thank you for considering a contribution to the DREO TypeScript SDK.
 
 This project is based on reverse engineering of undocumented DREO cloud APIs. Contributions should therefore be careful, reproducible, and explicit about what was actually verified.
 
@@ -23,11 +23,11 @@ Requirements:
 -   Node.js 22 or newer
 -   npm
 -   A primary DREO account that owns the home and devices
--   A separate SDK or adapter account that supports email and password login
--   A DREO home shared from the primary account with the SDK or adapter account
+-   A separate SDK account that supports email and password login
+-   A DREO home shared from the primary account with the SDK account
 -   At least one compatible DREO device for integration testing
 
-The SDK and adapter must be configured with the secondary SDK or adapter account, not the primary owner account. This shared-account setup is currently required because device discovery relies on the `FamilyTree` visible to the invited account.
+The SDK should be configured with the secondary SDK account, not the primary owner account. This shared-account setup is currently required because device discovery relies on the `FamilyTree` visible to the invited account.
 
 Install dependencies:
 
@@ -49,35 +49,27 @@ The `.env` file is ignored by Git and must never be committed.
 
 SDK:
 
-```bash
-npm run typecheck -w @dreo/api
-npm run build -w @dreo/api
-```
+    npm run typecheck:sdk
+    npm run build:sdk
 
-ioBroker adapter:
+The SDK must type-check and build successfully before a change is submitted.
 
-```bash
-npm run typecheck -w iobroker.dreo
-npm run build -w iobroker.dreo
-```
-
-Both packages must type-check and build successfully before a change is submitted.
+The ioBroker adapter is maintained separately in the
+`mehrwiedu/ioBroker.dreo-cloud` repository and consumes the published
+`@mehrwiedu/dreo-api` package.
 
 ## Project architecture
 
-The project follows an SDK-first architecture.
+This repository contains the reusable DREO SDK.
 
-Business logic belongs in `packages/dreo-api`.
+Protocol handling, cloud communication, device semantics, command validation,
+state constraints and capability resolution belong in the SDK.
 
-The ioBroker adapter under `packages/iobroker.dreo` should remain a thin integration layer that:
+The separate ioBroker adapter remains a thin integration layer. It creates
+ioBroker objects and states, forwards writes through the public SDK API and
+reflects SDK state updates.
 
--   reads adapter configuration,
--   connects through the SDK,
--   creates ioBroker objects and states,
--   forwards user writes to the SDK,
--   and reflects SDK state updates in ioBroker.
-
-The FamilyTree endpoint is the primary source for device discovery.
+FamilyTree is the only primary source for device discovery.
 
 Do not introduce `DeviceApi.list()` as the primary discovery mechanism.
 

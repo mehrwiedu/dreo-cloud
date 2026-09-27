@@ -1,23 +1,21 @@
 {
-  "name": "dreo-dev",
-  "version": "0.1.0",
+  "name": "dreo-cloud",
+  "version": "0.1.3",
   "private": true,
-  "description": "Development environment for reverse engineering the Dreo ecosystem and building a reusable API and ioBroker adapter.",
+  "description": "Development workspace for the unofficial @mehrwiedu/dreo-api SDK for DREO cloud devices.",
   "license": "MIT",
   "author": "mehrwiedu",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/dreo-api"
   ],
   "scripts": {
-    "typecheck:sdk": "npm run typecheck -w @dreo/api",
-    "typecheck:adapter": "npm run typecheck -w iobroker.dreo",
-    "typecheck": "npm run typecheck:sdk && npm run build:sdk && npm run typecheck:adapter && npm run typecheck:examples",
-    "build:sdk": "npm run build -w @dreo/api",
-    "build:adapter": "npm run build -w iobroker.dreo",
-    "build": "npm run build:sdk && npm run build:adapter",
-    "check": "npm run typecheck && npm run build",
-    "typecheck:examples": "tsc -p examples/tsconfig.json --noEmit"
+    "typecheck:sdk": "npm run typecheck -w @mehrwiedu/dreo-api",
+    "build:sdk": "npm run build -w @mehrwiedu/dreo-api",
+    "typecheck:examples": "tsc -p examples/tsconfig.json --noEmit",
+    "typecheck": "npm run typecheck:sdk && npm run typecheck:examples",
+    "build": "npm run build:sdk",
+    "check": "npm run typecheck && npm run build"
   },
   "engines": {
     "node": ">=22"

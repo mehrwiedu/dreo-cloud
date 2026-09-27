@@ -378,6 +378,55 @@ export class DreoWebSocketClient implements DreoSessionObserver {
         pending.reject(error);
     }
 
+    private createControlReplyError(
+        message: DreoWebSocketReply
+    ): DreoWebSocketError | undefined {
+        const errorCode = message.error_code;
+        const hasErrorCode =
+            errorCode !== undefined && errorCode !== null;
+
+        const errorMessage =
+            typeof message.error_msg === "string"
+                ? message.error_msg.trim()
+                : "";
+
+        let codeText: string | undefined;
+        let commandFailed = false;
+
+        if (typeof errorCode === "number") {
+            codeText = String(errorCode);
+            commandFailed =
+                !Number.isFinite(errorCode) || errorCode !== 0;
+        } else if (typeof errorCode === "string") {
+            codeText = errorCode.trim();
+            commandFailed =
+                codeText.length > 0 && codeText !== "0";
+        } else if (hasErrorCode) {
+            codeText = String(errorCode);
+            commandFailed = true;
+        } else {
+            commandFailed = errorMessage.length > 0;
+        }
+
+        if (!commandFailed) {
+            return undefined;
+        }
+
+        const codeSuffix =
+            codeText && codeText.length > 0
+                ? ` (code ${codeText})`
+                : "";
+
+        const messageSuffix =
+            errorMessage.length > 0
+                ? `: ${errorMessage}`
+                : "";
+
+        return new DreoWebSocketError(
+            `DREO control command failed${codeSuffix}${messageSuffix}.`
+        );
+    }
+
     private handleMessage(text: string): void {
         this.logDebug("WebSocket message received.", text);
 
@@ -390,7 +439,15 @@ export class DreoWebSocketClient implements DreoSessionObserver {
                 clearTimeout(pending.timeout);
 
                 this.pendingReply = undefined;
-                pending.resolve(message);
+
+                const replyError =
+                    this.createControlReplyError(message);
+
+                if (replyError) {
+                    pending.reject(replyError);
+                } else {
+                    pending.resolve(message);
+                }
 
                 return;
             }

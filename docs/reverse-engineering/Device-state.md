@@ -1,220 +1,176 @@
 # Device State
 
-**Status:** Verified with multiple Dreo fan devices.
+**Status:** Implemented and validated with multiple DREO device families.
 
 ## Endpoint
 
-    GET /api/user-device/device/state
+```text
+GET /api/user-device/device/state
+```
 
-## Query Parameters
+Query parameter:
 
--   `deviceSn`: Dreo device serial number
+- `deviceSn`
 
-## Purpose
+## Architectural role
 
-Returns the current runtime state of a single Dreo device.
+FamilyTree is the only primary source for discovering devices.
 
-## Response Structure
+The device-state endpoint is used only after a device was discovered through FamilyTree. It provides:
 
-    data
-    └── mixed
-        ├── connected
-        ├── poweron
-        ├── mode
-        ├── windlevel
-        ├── muteon
-        ├── childlockon
-        ├── lighton
-        ├── timeron
-        ├── timeroff
-        └── ...
+- the current state snapshot
+- the raw keys currently available on that device
+- values used by capability and constraint resolution
 
-## Observations
+It must not be used to invent or discover devices outside FamilyTree.
 
--   The endpoint returns the current state of exactly one device.
--   The endpoint must be called separately for every device.
--   Every state entry contains:
-    -   `state`
-    -   `timestamp`
--   Not every device supports every state.
--   Missing properties are expected and depend on the device type.
+## State behavior
 
-## Verified States
+DREO states are model-specific and incomplete by design.
 
-| API Key                 | Meaning                                  |
-| ----------------------- | ---------------------------------------- |
-| connected               | Device online                            |
-| poweron                 | Power state                              |
-| mode                    | Current operating mode                   |
-| windlevel               | Current fan speed                        |
-| muteon                  | Beep enabled/disabled                    |
-| childlockon             | Child lock (tower/stand/table fans only) |
-| lighton                 | Display light                            |
-| timeron                 | Timer configuration                      |
-| timeroff                | Timer configuration                      |
-| wifi_rssi               | Wi-Fi signal strength                    |
-| network_latency         | Cloud latency                            |
-| wifi_ssid               | Connected Wi-Fi                          |
-| module_firmware_version | Module firmware                          |
-| mcu_version             | MCU firmware                             |
-| module_hardware_model   | Hardware model                           |
+Examples of observed keys include:
 
-## Device-specific States
+- `connected`
+- `poweron`
+- `fanon`
+- `windlevel`
+- `mode`
+- `muteon`
+- `childlockon`
+- `lighton`
+- `atmon`
+- `brightness`
+- `colortemp`
+- `timeron`
+- `timeroff`
+- `oscmode`
+- `cruiseconf`
+- `rgblevel`
+- `ledlevel`
+- `filteron`
+- `filtertime`
+- `worktime`
+- `rssi`
 
-Some state fields are only available on certain device families.
+Missing keys are expected and are not errors.
 
-Example:
+## Mapping rules
 
--   Tower fan → `childlockon`
--   Ceiling fan → no `childlockon`
+Raw names are not globally semantic.
 
-Missing fields must not be treated as errors.
+- `lighton` can represent a main light or a display/status light.
+- `DR-HPF002S` does not expose a main light.
+- `DR-HCF001S` does not expose `poweron`.
+- directional `oscmode` semantics are confirmed only for `DR-HPF002S`.
 
-## SDK Decision
+Friendly mappings therefore depend on the resolved device context.
 
-The SDK shall not expose the raw API response.
+## State cache
 
-Instead, the response will be mapped into a dedicated `DeviceState` domain model.
+Live reports are incremental. The SDK merges each report into the existing `DreoDeviceState`.
 
-Planned properties:
+Unknown fields are preserved under:
 
--   connected
--   power
--   mode
--   windLevel
--   mute
--   childLock?
--   light?
--   timerOn?
--   timerOff?
+```ts
+state.raw
+```
 
-Additional device-specific properties may be added later.
+The ioBroker adapter exposes raw fields read-only.
 
-### Resolver Strategy
+## Runtime keys
 
-The Device State endpoint has proven to be the most reliable source for discovering
-the runtime capabilities of a device.
+A raw key can first appear after initialization. The adapter creates and logs the new raw state dynamically.
 
-Observed during reverse engineering:
+Current limitation: a complete friendly-state structure is not yet created automatically when a known key first becomes available only after initialization.
 
--   FamilyTree metadata (`controlsConf`) may be incomplete or even empty.
--   The Device State endpoint returns the currently available state keys of the device.
--   Different device families expose different state sets.
--   Unknown state keys must not be discarded.
+## Confirmed special cases
 
-SDK architecture decision:
+### Effective power-scoped states
 
-1. FamilyTree metadata is treated as supplemental information.
-2. The Device State endpoint is the primary source for runtime state discovery.
-3. WebSocket reports update existing states after initialization.
-4. A model-specific fallback database may supplement missing information for known devices.
+A component can retain its raw value while aggregate power is off. Friendly states show the effective user-visible state without destroying the raw value.
 
-The SDK therefore follows a "Device Resolver" approach instead of a static capability engine.
+### Humidifier indicators
 
-Future work:
+`rgblevel` and `ledlevel` retain their level values but are effectively off while `poweron=false`. Writes are allowed only while the humidifier is powered on.
 
-The Device Resolver will merge information from:
+### Directional oscillation
 
--   FamilyTree metadata
--   Initial Device State
--   WebSocket reports
--   Optional model-specific fallback definitions
+For `DR-HPF002S`:
 
-to determine the complete set of available SDK states for a device.
+- `oscmode 0`: off
+- `oscmode 1`: horizontal
+- `oscmode 2`: vertical
+- `oscmode 3`: both axes
 
-## ioBroker
+Horizontal and vertical angle presets are changed independently and only while the related axis is active.
 
-The ioBroker adapter should only create states for capabilities that are supported by the current device.
+### Timers
 
-## Investigation Notes
+Timer values use object payloads containing duration and timestamp. Completion reports can be incomplete and are reconciled conservatively.
 
-### 2026-06-29 – Ceiling Fan Light State
+### `predefine`
 
-**Status:** Confirmed by testing
+`predefine` is kept raw and read-only.
 
-During testing with three identical Dreo ceiling fans (`DR-HCF007S`), the SDK reported:
+Writing its string value did not execute the stored DREO app scene, while numeric writes were rejected by the cloud. No writable favorite abstraction is exposed.
 
-    light = true
+## DR-HHM003S humidifier observations
 
-for one device although the main light was switched off.
+Confirmed model-specific behavior includes:
 
-Further investigation showed:
+- operating modes `0` Manual, `1` Auto and `2` Sleep
+- manual fog levels `1` through `6`
+- auto and sleep target humidity from `30` through `90` percent
+- `hotfogon` as warm-mist state
+- `rgblevel` values `0`, `1`, `2`
+- `ledlevel` values `0`, `1`, `2`
+- indicator-level writes require `poweron=true`
+- `rgbth` contains the lower and upper humidity thresholds as a comma-separated pair
+- threshold writes preserve the unmodified counterpart value
+- Sleep turns the mood and display indicators off and the device restores their previous levels when leaving Sleep
+- Sleep turns warm mist off; warm mist is not automatically restored after leaving Sleep
 
--   The main light state was correctly displayed inside the Dreo app.
--   The state was **not** outdated.
--   The only difference between the three ceiling fans was the configured RGB effect.
+## DR-HAP009S air-purifier observations
 
-Results:
+Confirmed model-specific behavior includes:
 
--   Ceiling Fan A
+- modes `manual`, `auto-regular`, `turbo` and `sleep`
+- manual fan levels `1` through `3`
+- `rgbalwayson` as mood-light switch
+- `rgblevel` values `1` through `3` for mood-light level
+- `ledalwayson` as display switch
+- `muteon` as mute state
+- `childlockon` as child-lock state
+- `autoon` as power-recovery state
+- `pm25` as the PM2.5 value
+- `aq` values `1` through `4` as the observed air-quality level
+- `lifetime` as remaining filter-life percentage
 
-    -   RGB Effect: "Breathing"
-    -   SDK: `light = true`
+### Observed firmware-update sequence
 
--   Ceiling Fan B
+A real `DR-HAP009S` MCU firmware update was recorded end-to-end.
 
-    -   RGB Effect: Static
-    -   SDK: `light = false`
+Observed sequence:
 
--   Ceiling Fan C
-    -   RGB Effect: Static
-    -   SDK: `light = false`
+1. Before the update, `_ota` was `0`.
+2. Shortly after the update was started in the DREO app, `_ota` changed from `0` to `1`.
+3. The device then emitted `device-offline`.
+4. After reboot, the device emitted `device-online`.
+5. The online report contained `_ota=2`.
+6. `mcu_firmware_version` changed from `0.2.6` to `0.2.7`.
+7. `module_firmware_version` remained `3.8.4`.
 
-Changing the RGB effect of Ceiling Fan A from **Breathing** to **Static** immediately changed the SDK output from:
+The values are documented as an observed sequence, not as a guaranteed universal enumeration of all possible `_ota` states.
 
-    light = true
+The firmware update preserved the confirmed operating configuration observed before the update. Normal air-quality and PM2.5 reports resumed after the device came back online.
 
-to
+## Resolver strategy
 
-    light = false
+For each FamilyTree-discovered device, the SDK combines:
 
-without changing the main light state.
+1. FamilyTree metadata
+2. initial device state
+3. later WebSocket reports
+4. confirmed model-specific refinements
 
-### Conclusion
-
-The API field
-
-    mixed.lighton.state
-
-does **not** appear to represent the main ceiling light.
-
-It is likely related to the RGB lighting subsystem or an active lighting effect.
-
-The actual main light state is expected to be exposed by another API field or endpoint and still has to be identified.
-
-### SDK Decision
-
-Do **not** expose `mixed.lighton.state` as "Main Light".
-
-Until the actual meaning has been fully verified, this field should be treated as an internal lighting-related state.‚
-
-## 2026-06-29 – Ceiling Fan Component State Freshness
-
-**Status:** Verified by testing with DR-HCF007S ceiling fan.
-
-For ceiling fans, `poweron` behaves as a reliable aggregate state.
-
-Observed behavior:
-
--   `poweron = true` if at least one component is active:
-    -   fan
-    -   main light
-    -   RGB / ambience light
--   `poweron = false` if all components are off.
-
-Component states such as:
-
--   `fanon`
--   `lighton`
--   `atmon`
-
-do not always update when only the same component is toggled repeatedly.
-
-They may retain the previous value until another component is switched.
-
-Conclusion:
-
--   `poweron` can be used as aggregate device power state.
--   `fanon`, `lighton` and `atmon` must be treated carefully.
--   Their timestamps should be evaluated before using them as reliable component states.
--   For ioBroker, component states should initially be marked as potentially stale for ceiling fans.
+This resolves available states and constraints without using a static model list as the primary discovery mechanism.

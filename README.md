@@ -1,110 +1,106 @@
-# DREO TypeScript SDK and ioBroker Adapter
+# DREO TypeScript SDK
 
-An unofficial TypeScript SDK and ioBroker adapter for selected DREO smart home devices.
-
-This project provides a reusable SDK for DREO cloud communication and a thin ioBroker adapter built on top of that SDK.
-
-The implementation is based on reverse engineering of the official DREO mobile application, its HTTP APIs, and its WebSocket protocol.
+An unofficial TypeScript SDK for selected DREO cloud-connected devices. The ioBroker integration is maintained separately in `mehrwiedu/ioBroker.dreo-cloud`.
 
 > This project is not affiliated with, endorsed by, or supported by DREO.
 
 ## Project status
 
-The project currently provides a stable development foundation and is suitable for early testing.
+The SDK is functional and used by the separate Creator-based `ioBroker.dreo-cloud` adapter. The project is suitable for controlled testing, but remains experimental because DREO uses private and undocumented cloud APIs.
 
-The SDK and adapter are functional with the devices listed below, but the project should still be considered experimental. DREO may change its private cloud APIs without notice.
+Current package versions:
 
-The current version is `0.1.0`.
-
-## Features
-
-### SDK
-
-- Email and password authentication
-- Region-aware cloud access
-- Automatic re-login after HTTP `401` responses
-- WebSocket connection management
-- WebSocket reconnect after session refresh
-- FamilyTree-based device discovery
-- Runtime discovery of newly available devices
-- Device state cache
-- Incremental live state updates
-- Capability and state resolution
-- State constraints and command validation
-- Structured logging
-- Typed public API
-- Safe disconnect and cleanup handling
-
-### ioBroker adapter
-
-- DREO account configuration
-- Automatic device discovery
-- Dynamic object and state creation
-- Raw device states
-- Friendly state mappings
-- Live updates through WebSocket reports
-- Writable power, fan, speed, and light controls where supported
-- Runtime initialization of newly discovered devices
-- Protected and encrypted password configuration
-
-## Tested devices
-
-| Model | Device type | Tested quantity | Notes |
-|---|---|---:|---|
-| `DR-HCF007S` | Ceiling fan | 3 | Fan, main light, brightness, color temperature, and live state updates |
-| `DR-HPF002S` | Stand fan | 1 | Fan control and live state updates; no main light |
-| `DR-HHM001S` | Humidifier | 1 | Discovery, object creation, power state, humidity values, and live updates |
-
-Other DREO devices may be discovered successfully, but they are not automatically considered fully supported.
-
-## Important device-mapping note
-
-DREO state names are not always semantically identical across device types.
-
-For example, a raw state named `lighton` must not automatically be interpreted as a main light. Depending on the device, it may represent a real main light, a display, a status LED, an ambient light, or another device-specific light function.
-
-Friendly state mappings are therefore resolved using device type and capability information where possible.
+- SDK: `@mehrwiedu/dreo-api` `0.1.3`
+- Creator adapter: `iobroker.dreo-cloud` `0.1.3-beta.1`
 
 ## Architecture
-
-The project follows an SDK-first architecture.
 
 ```text
 DREO cloud
     |
     v
-DREO TypeScript SDK
+@mehrwiedu/dreo-api
     |
     v
-ioBroker adapter
+ioBroker.dreo-cloud
 ```
 
-Business logic belongs in the SDK. The ioBroker adapter should remain a thin integration layer.
+The SDK owns DREO protocol handling, device semantics, native command construction, state constraints and validation. The adapter owns ioBroker objects, friendly state metadata, write routing and acknowledgement behavior.
 
-The FamilyTree endpoint is the primary source for device discovery.
+FamilyTree is the only primary device-discovery source. Initial state requests enrich devices that were already discovered through FamilyTree.
 
-## Repository structure
+## SDK features
 
-```text
-packages/
-  dreo-api/          TypeScript SDK
-  iobroker.dreo/     ioBroker adapter
+- Email/password authentication
+- EU and US region support
+- Automatic login refresh after HTTP `401`
+- WebSocket lifecycle management and reconnect
+- FamilyTree-based device discovery
+- Runtime discovery of newly available devices
+- Initial state loading and incremental live reports
+- Device state cache
+- Capability and state resolution
+- Known, unknown and unassigned state separation
+- State constraints and command validation
+- Single- and multi-parameter WebSocket commands
+- Rejection of failed `control-reply` messages
+- Structured optional logging
+- Typed public API
+- Safe connect, disconnect and cleanup behavior
 
-tools/               Development and integration test tools
-docs/                Architecture and reverse-engineering documentation
-examples/            Public SDK usage examples
-```
+## Tested devices
 
-## Development requirements
+| Model | Type | Quantity | Validated areas |
+|---|---|---:|---|
+| `DR-HCF007S` | Ceiling fan | 3 | Fan, modes, main light, brightness, color temperature, atmosphere light, timers, child lock, live updates |
+| `DR-HCF001S` | Ceiling fan | 1 | Components without `poweron`, fan modes, timers and live updates |
+| `DR-HPF002S` | Stand fan | 1 | Fan, modes, display, directional oscillation, axis-specific angles and live updates |
+| `DR-HHM001S` | Humidifier | 1 | Power, modes, fog level, target humidity, indicators, filter state, operating information, timers and live updates |
+| `DR-HHM003S` | Humidifier | 1 | Power, modes, fog level, auto/sleep target humidity, warm mist, three-level indicators, humidity thresholds, filter state and live updates |
+| `DR-HAP009S` | Air purifier | 1 | Power, modes, fan levels, mood light, display, mute, child lock, power recovery, PM2.5, air-quality level, filter life, live updates and firmware-update observation |
 
-- Node.js 22 or newer
-- npm
-- A primary DREO account that owns the home and devices
-- A separate SDK or adapter account that supports email and password login
-- The primary account must share its DREO home with the SDK or adapter account
-- Access to at least one compatible DREO device
+Other devices may be discovered and exposed through raw states, but are not automatically considered fully supported.
 
-### Required DREO account setup
+## Important state-mapping rule
+
+DREO state names are not globally semantic.
+
+For example, `lighton` can represent a main light, a display or another device-specific light function. Friendly mappings are therefore selected from the confirmed device context rather than from the raw key alone.
+
+Unknown raw fields are preserved. They remain read-only until their meaning and write behavior are verified.
+
+## Confirmed high-level controls
+
+Depending on the device and its reported state set, the SDK supports:
+
+- power, fan and wind level
+- main light, brightness and color temperature
+- atmosphere light and brightness
+- display and humidifier indicators
+- mute and child lock
+- fan modes
+- sleep-light scene
+- power-on and power-off timers
+- directional oscillation mode
+- horizontal and vertical angle presets
+- humidifier mode, fog level and target humidity
+- humidifier warm mist and indicator levels
+- humidifier humidity-threshold configuration
+- humidifier filter confirmation
+- air-purifier modes and fan levels
+- air-purifier mood-light and display controls
+- air-purifier mute, child lock and power recovery
+- air-purifier PM2.5, air-quality level and filter-life information
+
+## Deliberately unsupported controls
+
+Ceiling-fan favorites exposed as raw `predefine` values are not implemented as writable SDK controls.
+
+Testing showed that writing the slot value does not execute the stored scene, while numeric writes are rejected by the DREO cloud. The SDK therefore keeps this value raw and read-only instead of synthesizing an unverified scene.
+
+`fixedconf` and unverified RGB effects also remain raw-only.
+
+## Account setup
 
 The current SDK and ioBroker adapter use a two-account setup:
 
@@ -115,120 +111,78 @@ The current SDK and ioBroker adapter use a two-account setup:
 
 Creating and sharing this secondary account is currently required, not optional. Device discovery relies on the `FamilyTree` visible to the invited SDK or adapter account. Accounts that can only authenticate through Apple or Google login are not currently supported.
 
-## Installation for development
+## Installation
+
+The SDK is published on npm:
+
+    npm install @mehrwiedu/dreo-api@0.1.3
+
+## Development
+
+Requirements:
+
+- Node.js 22 or newer
+- npm
+- a DREO account that supports email/password login
+- a shared DREO home visible to that account
+
+Install dependencies:
 
 ```bash
-git clone https://github.com/mehrwiedu/dreo-cloud.git
-cd dreo-cloud
 npm install
 ```
 
-Create a local `.env` file:
-
-```dotenv
-DREO_EMAIL=your-email@example.com
-DREO_PASSWORD=your-password
-DREO_REGION=EU
-```
-
-The `.env` file is ignored by Git and must never be committed.
-
-## Build
+Build and type-check:
 
 ```bash
-npm run build -w @dreo/api
-npm run build -w iobroker.dreo
+npm run typecheck:sdk
+npm run build:sdk
+npm run check
 ```
 
-Type-check both packages:
-
-```bash
-npm run typecheck -w @dreo/api
-npm run typecheck -w iobroker.dreo
-```
-
-## Development tests
-
-```bash
-npx tsx tools/test-client-devices.ts
-npx tsx tools/test-token-refresh.ts
-npx tsx tools/test-websocket-refresh.ts
-npx tsx tools/test-runtime-device-discovery.ts
-```
-
-These tools use the credentials from the local `.env` file.
-
-Some tools communicate with real devices and the DREO cloud. Review a tool before running it.
+Targeted tools live under `tools/`. Some tools communicate with real devices. Review them before execution.
 
 ## Runtime discovery
 
-When the SDK receives a WebSocket report for an unknown device, it reloads the FamilyTree and checks whether the device has become available.
+When a WebSocket message references an unknown device, the SDK reloads FamilyTree. Only devices present there are initialized.
 
-If the device is found:
+For a newly discovered device, the SDK:
 
-1. its current state is loaded,
-2. its capabilities are resolved,
-3. it is registered in the SDK,
-4. a discovery event is emitted,
-5. the original WebSocket state report is processed.
-
-The ioBroker adapter listens for this discovery event and creates the required objects and states without requiring a restart.
+1. loads its initial state,
+2. resolves capabilities and constraints,
+3. registers the device,
+4. emits the discovery event,
+5. applies the original live report.
 
 ## Cloud dependency
 
-This project depends on DREO cloud services and does not provide local-only control.
-
-Functionality may be affected by DREO server outages, API changes, WebSocket protocol changes, account restrictions, region-specific differences, or changes to the official mobile application.
+This project does not provide local-only control. DREO outages or protocol changes can affect functionality without notice.
 
 ## Security
 
 - Never commit `.env` files.
-- Never publish access tokens, refresh tokens, account IDs, device serial numbers, or WebSocket captures.
+- Never publish credentials, tokens, account IDs, device serial numbers or private captures.
 - Treat diagnostic logs as private.
-- Use only the dedicated SDK or adapter account credentials; do not configure the primary owner account.
-- Review logs before sharing them publicly.
+- Prefer a dedicated secondary DREO account.
+- Review logs before sharing them.
 
 ## Documentation
 
-Additional documentation is available under `docs/`.
-
-Relevant documents include:
-
 - `docs/architecture.md`
 - `docs/Development.md`
-- `docs/reverse-engineering/authentication.md`
-- `docs/reverse-engineering/websocket.md`
 - `docs/api/resolved-devices.md`
+- `docs/reverse-engineering/websocket.md`
+- `docs/reverse-engineering/Device-state.md`
 - `docs/roadmap.md`
-
-Some reverse-engineering documentation may describe internal or experimental behavior and should not be treated as a stable public API contract.
 
 ## Known limitations
 
-- Device support is currently limited to tested models and discovered capabilities.
-- Not every raw DREO state has a friendly mapping.
-- Some advanced functions are not yet implemented.
-- Timer, schedule, oscillation, RGB effects, presets, and model-specific modes may be incomplete.
 - Apple and Google login are not supported.
+- Token persistence is not implemented.
+- Not every raw field has a friendly mapping.
+- Friendly structures are not yet generated automatically when a known key first appears only after initialization.
+- Partially shared homes/devices still require dedicated testing.
 - The cloud API is private and undocumented.
-- The SDK and adapter are not yet published as public npm packages.
-
-## Planned work
-
-- Additional tested device models
-- Improved device-type-specific mappings
-- More automated tests
-- Adapter icon and public adapter documentation
-- Installation instructions for end users
-- Review for ioBroker repository requirements
-
-## Contributing
-
-Contributions are welcome, especially for additional device models, verified state mappings, protocol observations, tests, documentation, and bug reports.
-
-Do not include personal credentials, tokens, device serial numbers, or private cloud captures in issues or pull requests.
-
-See `CONTRIBUTING.md` for development guidance.
 
 ## License
 
