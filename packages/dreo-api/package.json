@@ -1,6 +1,6 @@
 {
     "name": "@mehrwiedu/dreo-api",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "description": "Unofficial TypeScript SDK for accessing DREO cloud-connected devices.",
     "license": "MIT",
     "author": "mehrwiedu",

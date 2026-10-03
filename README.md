@@ -10,8 +10,8 @@ The SDK is functional and used by the separate Creator-based `ioBroker.dreo-clou
 
 Current package versions:
 
-- SDK: `@mehrwiedu/dreo-api` `0.1.3`
-- Creator adapter: `iobroker.dreo-cloud` `0.1.3-beta.1`
+- SDK: `@mehrwiedu/dreo-api` `0.1.4`
+- Creator adapter: `iobroker.dreo-cloud` `0.1.3`
 
 ## Architecture
 
@@ -52,7 +52,7 @@ FamilyTree is the only primary device-discovery source. Initial state requests e
 
 | Model | Type | Quantity | Validated areas |
 |---|---|---:|---|
-| `DR-HCF007S` | Ceiling fan | 3 | Fan, modes, main light, brightness, color temperature, atmosphere light, timers, child lock, live updates |
+| `DR-HCF007S` | Ceiling fan | 3 | Fan, modes, main light, brightness, color temperature, atmosphere light, power/component-mask semantics, timers, child lock, live updates |
 | `DR-HCF001S` | Ceiling fan | 1 | Components without `poweron`, fan modes, timers and live updates |
 | `DR-HPF002S` | Stand fan | 1 | Fan, modes, display, directional oscillation, axis-specific angles and live updates |
 | `DR-HHM001S` | Humidifier | 1 | Power, modes, fog level, target humidity, indicators, filter state, operating information, timers and live updates |
@@ -115,7 +115,7 @@ Creating and sharing this secondary account is currently required, not optional.
 
 The SDK is published on npm:
 
-    npm install @mehrwiedu/dreo-api@0.1.3
+    npm install @mehrwiedu/dreo-api@0.1.4
 
 ## Development
 

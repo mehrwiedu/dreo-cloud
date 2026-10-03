@@ -1,6 +1,6 @@
 {
   "name": "dreo-cloud",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "Development workspace for the unofficial @mehrwiedu/dreo-api SDK for DREO cloud devices.",
   "license": "MIT",

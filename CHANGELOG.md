@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.1.4 - 2026-10-03
+
+### Fixed
+
+- Corrected `DR-HCF007S` power/component-mask handling so individual fan, main-light and atmosphere-light activation follows the device's validated model-specific semantics instead of reactivating unrelated stored components.
+- Level writes that imply component activation now follow the same `DR-HCF007S` mask behavior: `windlevel` activates the fan, `brightness` and `colortemp` activate the main light, and atmosphere RGB controls activate the atmosphere light.
+
+### Verified
+
+- Real-device `DR-HCF007S` validation confirmed persistent component masks across aggregate power-off, additive component activation while powered on, exclusive component activation while powered off, last-component power-off behavior, and preservation of stored level values.
+- Independent HTTP state reads were used after each real-device write to verify the resulting cloud/device state separately from the SDK's local command-reply cache.
+
 ## 0.1.3 - 2026-09-27
 
 ### Added

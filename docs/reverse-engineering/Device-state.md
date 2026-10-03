@@ -65,6 +65,40 @@ Raw names are not globally semantic.
 
 Friendly mappings therefore depend on the resolved device context.
 
+### `DR-HCF007S` power and component mask
+
+On `DR-HCF007S`, `fanon`, `lighton` and `atmon` form a persistent
+component-selection mask. `poweron` is the aggregate activation state for
+that mask.
+
+- `poweron=false` switches the aggregate device state off without clearing
+  the stored component mask or its associated level values.
+- `poweron=true` reactivates the stored mask. If all three component states
+  are false, native DREO behavior activates `fanon`, `lighton` and `atmon`
+  together; the SDK reproduces this recovery behavior.
+- Enabling an individual component while `poweron=true` is additive and
+  leaves the other selected components unchanged.
+- Enabling an individual component while `poweron=false` is exclusive:
+  the requested component is selected, the other two component states are
+  cleared, and `poweron` becomes true.
+- Disabling one of several active components clears only that component.
+  Disabling the last active component turns `poweron` off while preserving
+  the last component in the stored mask.
+- Level values remain persistent unless that level is explicitly changed.
+  For example, switching the fan or main light back on does not reset
+  `windlevel`, `brightness` or `colortemp`.
+
+The SDK applies the same component-activation rules to controls that already
+have an established component dependency:
+
+- `windlevel > 0` activates `fanon`
+- `brightness` and `colortemp` activate `lighton`
+- `rgbpresetsel > 0` and `atmbri` activate `atmon`
+
+Real-device tests directly confirmed the off-state activation behavior for
+`windlevel` and `brightness`. Friendly component states are normalized to off
+while `poweron=false`, even though the raw component mask is retained.
+
 ## State cache
 
 Live reports are incremental. The SDK merges each report into the existing `DreoDeviceState`.

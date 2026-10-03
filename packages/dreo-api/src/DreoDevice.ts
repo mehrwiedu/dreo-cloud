@@ -1856,7 +1856,11 @@ export class DreoDevice {
     private async applyStateChange(
         change: Parameters<StateMapper["build"]>[1]
     ): Promise<void> {
-        const payload = this.stateMapper.build(this.currentState, change);
+        const payload = this.stateMapper.build(
+            this.currentState,
+            change,
+            this.model
+        );
 
         await this.setStates(payload);
     }
