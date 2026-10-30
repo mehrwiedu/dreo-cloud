@@ -43,6 +43,7 @@ export class HttpClient {
 
         const response = await fetch(url, {
             method,
+            signal: AbortSignal.timeout(30_000),
             headers: {
                 ua: "dreo/2.8.2",
                 lang: "en",

@@ -1,6 +1,6 @@
 {
   "name": "dreo-cloud",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "Development workspace for the unofficial @mehrwiedu/dreo-api SDK for DREO cloud devices.",
   "license": "MIT",
@@ -15,7 +15,8 @@
     "typecheck:examples": "tsc -p examples/tsconfig.json --noEmit",
     "typecheck": "npm run typecheck:sdk && npm run typecheck:examples",
     "build": "npm run build:sdk",
-    "check": "npm run typecheck && npm run build"
+    "check": "npm run typecheck && npm run build && npm run test:http",
+    "test:http": "node --test tools/HttpClient.timeout.test.mjs"
   },
   "engines": {
     "node": ">=22"
